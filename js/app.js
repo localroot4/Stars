@@ -166,7 +166,8 @@ function renderLearn(main) {
 /* ---------- lesson player ---------- */
 function renderLesson(id) {
   const L = lessonById(id); if (!L) return nav('learn');
-  const steps = L.kind === 'vocab' ? ['Kelimeler', 'Dene'] : L.scene?.dome ? ['Bak', 'Bul', 'Dene'] : ['Bak', 'Bul', 'Öğren', 'Dene'];
+  const steps = L.kind === 'vocab' ? ['Kelimeler', 'Dene'] : (L.scene?.dome || L.kind === 'nav') ? ['Bak', 'Bul', 'Dene'] : ['Bak', 'Bul', 'Öğren', 'Dene'];
+  const hasKnow = steps.length === 4;
   let step = 0, fig = null, dome = null, fullOn = false;
   const ov = $('#overlay');
   const questions = buildLessonQuiz(L);
@@ -207,8 +208,8 @@ function renderLesson(id) {
         <h2 style="margin-top:16px">Nasıl bulurum? 🔭</h2>
         <div class="kid">${L.find.map(s => `<p>${s}</p>`).join('')}</div>
         ${L.when ? html`<div class="chips" style="margin-top:14px"><span class="chip" aria-pressed="true">📅 ${L.when.season}</span><span class="chip" aria-pressed="true">🧭 ${L.when.dir}</span><span class="chip">⏰ ${L.when.best}</span></div>` : ''}
-        ${L.kind === 'nav' ? html`<div class="fact"><span class="ic">✋</span><span>${L.fact}</span></div>` : ''}`;
-    } else if (step === 2 && steps.length === 4) {
+        ${!hasKnow && L.fact ? html`<div class="fact"><span class="ic">${L.kind === 'nav' ? '✋' : '💡'}</span><span>${L.fact}</span></div>` : ''}`;
+    } else if (step === 2 && hasKnow) {
       body.innerHTML = sceneBox() + html`
         <div class="fact"><span class="ic">💡</span><span>${L.fact}</span></div>
         ${L.story ? html`<div class="fact gold"><span class="ic">📖</span><span>${L.story}</span></div>` : ''}
