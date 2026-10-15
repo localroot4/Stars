@@ -26,7 +26,7 @@ Push to the default branch and enable GitHub Pages (Settings → Pages → Deplo
 ## Tests
 
 ```
-node --test test/
+node --test
 ```
 
 Covers sidereal time, altitude/azimuth, the dome and local projections, angular separation and the galactic plane transform.
