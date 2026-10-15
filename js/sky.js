@@ -351,9 +351,10 @@ export function ambientSky(canvas) {
   const loop = (t) => { draw(t); raf = requestAnimationFrame(loop); };
   build();
   if (REDUCED) draw(0); else raf = requestAnimationFrame(loop);
-  let ro; const onResize = () => { build(); draw(0); };
+  // iOS fires resize when the URL bar collapses: keep the stars, only rescale their y
+  const onResize = () => { const oh = h, ow = w; ({ ctx, w, h } = setupCanvas(canvas)); if (w !== ow) build(); else for (const s of stars) s.y *= h / oh; draw(0); };
   window.addEventListener('resize', onResize);
-  return { stop() { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); void ro; } };
+  return { stop() { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); } };
 }
 
 /* ---------- confetti ---------- */

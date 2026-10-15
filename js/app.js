@@ -15,7 +15,7 @@ const DIRS = ['kuzey', 'kuzeydoğu', 'doğu', 'güneydoğu', 'güney', 'güneyba
 const dirWord = (az) => DIRS[Math.round(az / 45) % 8];
 const altWord = (alt) => alt > 65 ? 'tam tepede' : alt > 40 ? 'yüksekte' : alt > 20 ? 'orta yükseklikte' : 'ufka yakın';
 const place = () => S.city === 'geo' && S.geo ? S.geo : (CITIES.find(c => c.id === S.city) || CITIES[0]);
-const placeName = () => S.city === 'geo' ? 'Konumun' : (CITIES.find(c => c.id === S.city) || CITIES[0]).name;
+const placeName = () => S.city === 'geo' ? 'Konumum' : (CITIES.find(c => c.id === S.city) || CITIES[0]).name;
 const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const buzz = (ms) => { try { navigator.vibrate && navigator.vibrate(ms); } catch { /* ignore */ } };
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -34,7 +34,7 @@ function toast(msg, ms = 2200) {
 }
 
 function speak(text) {
-  if (!('speechSynthesis' in window)) return toast('Bu cihazda ses yok');
+  if (!('speechSynthesis' in window)) return toast('Bu cihaz sesli okuma yapamıyor');
   const u = new SpeechSynthesisUtterance(text);
   const v = speechSynthesis.getVoices().find(v => v.lang.toLowerCase().startsWith('tr'));
   if (v) u.voice = v; u.lang = 'tr-TR'; u.rate = 0.85;
@@ -123,7 +123,7 @@ function renderHome(main) {
     <div class="card hero">
       <div>
         <h1>${greet} 👋</h1>
-        <p class="muted" style="margin-top:4px">${done === 0 ? 'İlk yıldızını öğrenmeye hazır mısın?' : done === total ? 'Hepsini öğrendin! Şimdi gökyüzüne çık 🌙' : `${total} dersin ${done} tanesini bitirdin.`}</p>
+        <p class="muted" style="margin-top:4px">${done === 0 ? 'İlk yıldızını öğrenmeye hazır mısın?' : done === total ? 'Hepsini öğrendin! Şimdi dışarı çık, gökyüzüne bak 🌙' : `${total} dersin ${done} tanesini bitirdin.`}</p>
         <button class="btn" style="margin-top:14px" id="continue">${next ? (done ? 'Devam et' : 'Başla') + ' ' + next.emoji : 'Alıştırma yap 🎯'}</button>
       </div>
       <div class="ring" role="img" aria-label="İlerleme yüzde ${pct}">
@@ -133,7 +133,7 @@ function renderHome(main) {
     </div>
     <div class="section-title"><h2>Bu gece gökyüzünde 🌙</h2><button class="chip" id="to-sky">Canlı harita</button></div>
     <div class="tonight">
-      ${up.length ? up.map(c => { const l = lessonById(c.id); return html`<button class="sky-item" data-lesson="${l.id}"><span class="emoji" aria-hidden="true">${l.emoji}</span><span><span class="name">${l.name}</span><br><span class="dir">${l.latin} · ${dirWord(c.az)}, ${altWord(c.alt)}</span></span><span class="muted" aria-hidden="true">›</span></button>`; }).join('') : '<div class="empty card"><div class="ic">☁️</div>Şu anda bu uygulamadaki takımyıldızlardan hiçbiri ufkun üstünde değil. Birkaç saat sonra yeniden bak.</div>'}
+      ${up.length ? up.map(c => { const l = lessonById(c.id); return html`<button class="sky-item" data-lesson="${l.id}"><span class="emoji" aria-hidden="true">${l.emoji}</span><span><span class="name">${l.name}</span><br><span class="dir">${l.latin} · ${dirWord(c.az)}, ${altWord(c.alt)}</span></span><span class="muted" aria-hidden="true">›</span></button>`; }).join('') : '<div class="empty card"><div class="ic">☁️</div>Şu anda öğrendiğimiz takımyıldızlardan hiçbiri gökyüzünde görünmüyor. Birkaç saat sonra yeniden bak.</div>'}
     </div>
     <div class="section-title"><h2>Kısayollar</h2></div>
     <div class="stack">
@@ -198,7 +198,7 @@ function renderLesson(id) {
       if (step === 0) {
         body.innerHTML = html`<div class="name-block"><div class="big">${L.name}</div><div class="pron">${L.latin}</div></div>
           <div class="kid">${L.intro.map(s => `<p>${s}</p>`).join('')}</div>
-          <div class="star-list">${VOCAB.map(v => html`<div class="star-row"><span style="font-size:20px">${v.emoji}</span><span><b class="latin" style="font-size:1.15em">${v.word}</b><br><span class="sub">${v.desc}</span></span><button class="chip" data-say="${v.word}" aria-label="${v.word} dinle">🔊</button></div>`).join('')}</div>
+          <div class="star-list">${VOCAB.map(v => html`<div class="star-row"><span style="font-size:20px">${v.emoji}</span><span><b class="latin" style="font-size:1.15em">${v.word}</b><br><span class="sub">${v.desc}</span></span><button class="chip" data-say="${v.word}" aria-label="${v.word} kelimesini dinle">🔊</button></div>`).join('')}</div>
           <div class="fact"><span class="ic">💡</span><span>${L.fact}</span></div>`;
       } else body.innerHTML = quizMarkup(questions);
     } else if (step === 0) {
@@ -265,7 +265,7 @@ function buildLessonQuiz(L) {
     return qs;
   }
   const others = LESSONS.filter(l => l.id !== L.id && l.kind !== 'vocab' && l.kind !== 'nav');
-  qs.push({ q: 'Bu takımyıldızın adı ne?', figure: L.scene.dome ? null : L.scene, options: shuffle([L, ...shuffle(others).slice(0, 3)]).map(l => ({ label: optName(l), ok: l === L })), say: L.name });
+  if (!L.scene.dome) qs.push({ q: 'Bu takımyıldızın adı ne?', figure: L.scene, options: shuffle([L, ...shuffle(others).slice(0, 3)]).map(l => ({ label: optName(l), ok: l === L })), say: L.name });
   if (L.when) qs.push({ q: `<span class="latin">${L.name}</span> hangi mevsimde en iyi görünür?`, options: shuffle([L.when.season, ...shuffle(SEASONS.filter(s => s !== L.when.season)).slice(0, 3)]).map(s => ({ label: s, ok: s === L.when.season })) });
   return qs;
 }
@@ -280,7 +280,7 @@ function bindQuiz(root, questions, onDone) {
     const q = questions[i];
     $('#qn', root).textContent = `Soru ${i + 1} / ${questions.length}`;
     box.innerHTML = html`<div class="quiz-q">${q.q}</div>${q.figure ? '<div class="figure-wrap" style="max-height:38dvh;margin-bottom:12px"><canvas id="qfig" role="img" aria-label="Şekil"></canvas></div>' : ''}
-      <div class="options ${q.figOptions ? 'figs' : ''}">${q.options.map((o, k) => `<button class="opt" data-k="${k}">${q.figOptions ? '<canvas></canvas>' : o.label}</button>`).join('')}</div>`;
+      <div class="options ${q.figOptions ? 'figs' : ''}">${q.options.map((o, k) => `<button class="opt" data-k="${k}"${q.figOptions ? ` aria-label="${k + 1}. şekil"` : ''}>${q.figOptions ? '<canvas></canvas>' : o.label}</button>`).join('')}</div>`;
     if (q.figure) { const f = makeFigure($('#qfig', box), q.figure, { labels: {} }); f.animate(900); }
     if (q.figOptions) box.querySelectorAll('.opt canvas').forEach((c, k) => { new Figure(c, { figures: q.options[k].scene.figures, extra: q.options[k].scene.extra || [], labels: {}, pad: .14, bgStars: false }).draw(1); });
     box.querySelectorAll('.opt').forEach(b => b.onclick = () => {
@@ -288,7 +288,7 @@ function bindQuiz(root, questions, onDone) {
       const o = q.options[+b.dataset.k];
       box.querySelectorAll('.opt').forEach((x, k) => { if (q.options[k].ok) x.classList.add('ok'); else if (x === b) x.classList.add('bad'); else x.classList.add('dim'); });
       if (o.ok) { correct++; buzz(30); $('#qs', root).textContent = `✅ ${correct}`; if (q.say) speak(q.say); } else buzz([60, 40, 60]);
-      setTimeout(() => { delete box.dataset.lock; i++; if (i < questions.length) show(); else onDone(correct); }, o.ok ? 900 : 1500);
+      setTimeout(() => { if (!root.isConnected) return; delete box.dataset.lock; i++; if (i < questions.length) show(); else onDone(correct); }, o.ok ? 900 : 1500);
     });
   };
   show();
@@ -299,13 +299,13 @@ function renderSky(main) {
   let offset = 0, playing = 0, facing = 180;
   const { lat, lon } = place();
   main.innerHTML = html`<section class="view">
-    <div class="row between" style="margin-bottom:10px"><h1>Gökyüzü şimdi 🌙</h1><button class="chip" id="loc">📍 ${placeName()}</button></div>
+    <div class="row between" style="margin-bottom:10px"><h1>Şu anda gökyüzü 🌙</h1><button class="chip" id="loc">📍 ${placeName()}</button></div>
     <div class="sky-wrap"><canvas id="dome" role="img" aria-label="Canlı gökyüzü haritası"></canvas><div id="bubble" hidden></div></div>
     <div class="sky-controls">
       <p class="small muted">Telefonu başının üstünde tut. Haritanın altı, baktığın yöndür. Bir şekle dokun, adını gör.</p>
       <div>
         <div class="small muted" style="margin-bottom:6px">Hangi yöne bakıyorsun?</div>
-        <div class="facing" role="radiogroup">${[['Kuzey', 0], ['Doğu', 90], ['Güney', 180], ['Batı', 270]].map(([t, v]) => `<button class="chip" role="radio" data-facing="${v}" aria-pressed="${v === 180}">${t}</button>`).join('')}</div>
+        <div class="facing" role="group" aria-label="Baktığın yön">${[['Kuzey', 0], ['Doğu', 90], ['Güney', 180], ['Batı', 270]].map(([t, v]) => `<button class="chip" data-facing="${v}" aria-pressed="${v === 180}">${t}</button>`).join('')}</div>
       </div>
       <div>
         <div class="time-row"><button class="icon-btn" id="play" aria-label="Zamanı ilerlet"><svg viewBox="0 0 24 24"><path d="M7 4l12 8-12 8z"/></svg></button><input type="range" id="time" min="0" max="720" step="15" value="0" aria-label="Saat"><button class="chip" id="now">Şimdi</button></div>
@@ -316,7 +316,7 @@ function renderSky(main) {
   </section>`;
   const canvas = $('#dome'), bubble = $('#bubble');
   const date = () => new Date(Date.now() + offset * 60000);
-  const tlabel = () => { $('#tlabel').textContent = `${offset === 0 ? 'Şimdi' : `${offset / 60} saat sonra`} · saat ${date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`; };
+  const tlabel = () => { $('#tlabel').textContent = `${offset === 0 ? 'Şimdi' : `${Math.floor(offset / 60) ? `${Math.floor(offset / 60)} saat ` : ''}${offset % 60 ? `${offset % 60} dakika ` : ''}sonra`} · saat ${date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`; };
   const dome = new SkyDome(canvas, { lat, lon, date: date(), facing, cons: skyCons(), showLabels: S.labels });
   dome.start(); tlabel();
   const upd = () => { dome.set({ date: date(), facing }); tlabel(); };
@@ -352,7 +352,7 @@ function renderPractice(main) {
     { id: 'name', ic: '🏷️', t: 'Adı ne?', d: 'Şekle bak, adını seç' },
     { id: 'shape', ic: '✨', t: 'Hangisi?', d: 'Adı oku, doğru şekli bul' },
     { id: 'sky', ic: '🌌', t: 'Gökyüzünde bul', d: 'Haritada ona dokun' },
-    { id: 'cards', ic: '🃏', t: 'Kartlar', d: 'Sakin tekrar, her kartta bir takımyıldız' },
+    { id: 'cards', ic: '🃏', t: 'Kartlar', d: 'Acele yok: her kartta bir takımyıldız' },
   ];
   const p = pool();
   main.innerHTML = html`<section class="view">
@@ -397,14 +397,14 @@ function renderQuiz(mode) {
       const { lat, lon } = place(); const d = eveningFor(t.id);
       const up = SKY_CONS.filter(id => conAltAz(id, lat, lon, d).alt > 12);
       const cons = shuffle(up.filter(id => id !== t.id)).slice(0, 5).concat(t.id).map(id => ({ id, lines: LINES[id], label: '' }));
-      body.innerHTML = html`<div class="quiz-q">${t.emoji} ${t.acc} gökyüzünde bul ve dokun</div><div class="sky-wrap"><canvas id="qdome" role="img" aria-label="Gökyüzü haritası"></canvas></div><p class="small muted" style="margin-top:8px;text-align:center">${d.toLocaleDateString('tr-TR', { month: 'long' })} · saat 21.30 · ${placeName()}</p>`;
+      body.innerHTML = html`<div class="quiz-q">${t.emoji} ${t.acc} gökyüzünde bul ve ona dokun</div><div class="sky-wrap"><canvas id="qdome" role="img" aria-label="Gökyüzü haritası"></canvas></div><p class="small muted" style="margin-top:8px;text-align:center">${d.toLocaleDateString('tr-TR', { month: 'long' })} · saat 21.30 · ${placeName()}</p>`;
       const c = $('#qdome', body);
       dome = new SkyDome(c, { lat, lon, date: d, facing: 180, cons, showLabels: false }); dome.start();
       c.onclick = (e) => {
         if (c.dataset.lock) return; c.dataset.lock = '1';
         const r = c.getBoundingClientRect(); const id = dome.pick(e.clientX - r.left, e.clientY - r.top);
         const ok = id === t.id; dome.set({ highlight: t.id, cons: cons.map(x => ({ ...x, label: x.id === t.id ? t.name : '' })), showLabels: true });
-        if (ok) { correct++; buzz(30); toast('Aferin! ✅'); speak(t.name); } else { buzz([60, 40, 60]); toast(id ? `Dokunduğun: ${lessonById(id).name}. Doğrusu altın renkli olan.` : 'Yıldızlara dokun. Doğrusu altın renkli olan.'); }
+        if (ok) { correct++; buzz(30); toast('Aferin! ✅'); speak(t.name); } else { buzz([60, 40, 60]); toast(id ? `Bu ${lessonById(id).name}. Doğrusu altın renkli olan.` : 'Yıldızlara dokun. Doğrusu altın renkli olan.'); }
         setTimeout(() => { i++; show(); }, ok ? 1100 : 2200);
       };
       return;
@@ -425,12 +425,13 @@ function renderCards(ov) {
     fig && fig.stop();
     const L = all[i];
     ov.innerHTML = html`<div class="player" role="dialog" aria-label="Kartlar"><div class="phead"><button class="icon-btn" id="close" aria-label="Kapat">${ICON_X}</button><div class="steps">${all.map((_, k) => `<i class="${k <= i ? 'on' : ''}"><b></b></i>`).join('')}</div><span class="small muted num">${i + 1}/${all.length}</span></div>
-      <div class="pbody"><div class="flash" id="flash"><div class="face front"><div style="width:100%"><div class="figure-wrap" style="max-height:40dvh"><canvas id="fig" role="img" aria-label="Şekil"></canvas></div><p class="muted" style="text-align:center;margin-top:10px">${L.emoji} Karta dokun</p></div></div>
+      <div class="pbody"><div class="flash" id="flash" role="button" tabindex="0" aria-label="Kartı çevir"><div class="face front"><div style="width:100%"><div class="figure-wrap" style="max-height:40dvh"><canvas id="fig" role="img" aria-label="Şekil"></canvas></div><p class="muted" style="text-align:center;margin-top:10px">${L.emoji} Karta dokun</p></div></div>
       <div class="face back"><div class="name-block"><div class="big">${L.name}</div><div class="pron">${L.latin}${L.nick ? ' · ' + L.nick : ''}</div><p class="muted small" style="margin-top:8px">${L.shape ? 'Şekli: ' + L.shape : ''}</p></div></div></div></div>
       <div class="pfoot"><button class="btn ghost block" id="no">Henüz değil 🔁</button><button class="btn block" id="yes">Biliyorum ✅</button></div></div>`;
     fig = makeFigure($('#fig'), L.scene, { labels: {} }); fig.animate(900);
     const fl = $('#flash'); let flipped = false;
     fl.onclick = () => { flipped = !flipped; fl.classList.toggle('flipped', flipped); if (flipped) speak(L.name); };
+    fl.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fl.onclick(); } };
     const next = (know) => { S.cards[L.id] = Math.max(0, Math.min(3, (S.cards[L.id] || 0) + (know ? 1 : -1))); save(); i++; if (i < all.length) show(); else { leave(); confetti($('#confetti')); toast('Bütün kartları gördün 🎉'); } };
     $('#yes').onclick = () => next(true); $('#no').onclick = () => next(false);
     $('#close').onclick = leave;
@@ -463,9 +464,10 @@ applyTheme();
 matchMedia('(prefers-color-scheme: light)').addEventListener('change', applyTheme);
 ambientSky($('#bg'));
 $('#settings-btn').onclick = openSettings;
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') ($('#overlay #close') || $('#overlay #bd'))?.click(); });
 document.querySelectorAll('#tabbar button').forEach(b => b.onclick = () => nav(b.dataset.route));
 window.addEventListener('hashchange', route);
 if ('speechSynthesis' in window) speechSynthesis.getVoices();
-document.fonts && document.fonts.ready.then(() => { if (location.hash.startsWith('#lesson') || location.hash === '#sky') route(); });
+document.fonts && document.fonts.ready.then(() => { if (location.hash === '#sky') route(); }); // redraw dome labels with the loaded font
 route();
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => { /* offline support is optional */ });
