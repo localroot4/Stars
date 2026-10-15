@@ -108,7 +108,7 @@ export const LESSONS = [
     scene: { figures: [{ id: 'UMa', lines: DIPPER }, { id: 'UMi', lines: LITTLE, highlight: false }], hop: { from: 53910, to: 54061, times: 5, target: 11767 }, labels: ['Polaris', 'Dubhe', 'Merak'] },
     intro: ['Kutup Yıldızı her zaman kuzeydedir.', 'Onu bulursan dört yönü de bulursun.'],
     find: ['1. Büyük Kepçe\'yi bul.', '2. Kabın kenarındaki iki yıldıza bak: Merak ve Dubhe.', '3. Merak\'tan Dubhe\'ye bir çizgi çek ve beş kat uzat.', '4. Kutup Yıldızı\'na ulaştın. Onun altı kuzeydir.', '5. Yüzün kuzeye dönükken sağın doğu, solun batı, arkan güneydir.'],
-    fact: 'Kutup Yıldızı\'nın ufuktan yüksekliği, bulunduğun yerin enlemine eşittir. Tahran\'da yaklaşık 36 derece, yani üç buçuk yumruk.' },
+    fact: 'Kutup Yıldızı\'nın ufuktan yüksekliği, bulunduğun yerin enlemine eşittir. Senin yerinde bu yaklaşık {lat} derece, yani {fist} yumruk.' },
 
   { id: 'Cas', kind: 'con', group: 'start', emoji: '👑', name: 'Kraliçe', acc: 'Kraliçe\'yi', latin: 'Cassiopeia', nick: 'W',
     scene: { figures: [{ id: 'Cas', lines: CAS_W }], labels: ['Schedar', 'Caph', 'Navi'] }, shape: 'W harfi',

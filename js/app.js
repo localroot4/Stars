@@ -6,16 +6,39 @@ import { CITIES, VOCAB, STARS, LESSONS, GROUPS, SKY_CONS, SEASONS, lessonById, c
 
 /* ---------- state ---------- */
 const KEY = 'yildizlar.v1';
-const DEFAULTS = { onboarded: false, theme: 'dark', city: 'tehran', geo: null, labels: true, done: {}, cards: {}, best: {} };
+// city: 'auto' = the phone's location, otherwise a CITIES id picked in Settings
+const DEFAULTS = { onboarded: false, theme: 'dark', city: 'auto', cityPicked: false, geo: null, geoAsked: false, labels: true, done: {}, cards: {}, best: {} };
 let S = load();
-function load() { try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch { return { ...DEFAULTS }; } }
+function load() {
+  try {
+    const s = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') };
+    // older builds stored Tehran as a silent default and 'geo' for the phone: both now mean "use the phone"
+    if (s.city === 'geo' || (s.city === 'tehran' && !s.cityPicked)) s.city = 'auto';
+    return s;
+  } catch { return { ...DEFAULTS }; }
+}
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* private mode: keep going in memory */ } }
 
 const DIRS = ['kuzey', 'kuzeydoğu', 'doğu', 'güneydoğu', 'güney', 'güneybatı', 'batı', 'kuzeybatı'];
 const dirWord = (az) => DIRS[Math.round(az / 45) % 8];
 const altWord = (alt) => alt > 65 ? 'tam tepede' : alt > 40 ? 'yüksekte' : alt > 20 ? 'orta yükseklikte' : 'ufka yakın';
-const place = () => S.city === 'geo' && S.geo ? S.geo : (CITIES.find(c => c.id === S.city) || CITIES[0]);
-const placeName = () => S.city === 'geo' ? 'Konumum' : (CITIES.find(c => c.id === S.city) || CITIES[0]).name;
+// Before the first GPS fix, guess the place from the phone's time zone.
+const TZ_CITY = { 'Asia/Tehran': 'tehran', 'Asia/Baku': 'baku', 'Europe/Istanbul': 'istanbul' };
+function tzGuess() {
+  let tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { /* very old browser */ }
+  return CITIES.find(c => c.id === TZ_CITY[tz]) || { name: 'Tahmini konum', lat: 40, lon: -new Date().getTimezoneOffset() / 4 };
+}
+const place = () => S.city !== 'auto' ? (CITIES.find(c => c.id === S.city) || CITIES[0]) : (S.geo || tzGuess());
+const placeName = () => S.city !== 'auto' ? place().name : S.geo ? 'Konumum' : tzGuess().id ? `${tzGuess().name} (tahmini)` : 'Tahmini konum';
+const deg = (x) => Math.abs(x).toLocaleString('tr-TR', { maximumFractionDigits: 2 });
+const coordText = (p) => `${deg(p.lat)}° ${p.lat >= 0 ? 'K' : 'G'} · ${deg(p.lon)}° ${p.lon >= 0 ? 'D' : 'B'}`;
+// Lesson text can say {lat} and {fist}: the Polaris altitude where the reader stands.
+function fill(t) {
+  if (!t || !t.includes('{lat}')) return t;
+  const lat = Math.round(place().lat);
+  if (lat < 1) return t.split('. ')[0] + '. Bulunduğun yerden Kutup Yıldızı görünmez.';
+  return t.replace('{lat}', lat).replace('{fist}', (Math.round(lat / 5) / 2).toLocaleString('tr-TR'));
+}
 const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const buzz = (ms) => { try { navigator.vibrate && navigator.vibrate(ms); } catch { /* ignore */ } };
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -106,9 +129,12 @@ function renderOnboard() {
       <div class="card row"><span style="font-size:30px" aria-hidden="true">🧭</span><span><b>Bul</b><br><span class="muted small">Canlı gökyüzü haritası, bu gece nereye bakacağını gösterir.</span></span></div>
       <div class="card row"><span style="font-size:30px" aria-hidden="true">🎯</span><span><b>Dene</b><br><span class="muted small">Kısa alıştırmalarla adlar aklında kalır.</span></span></div>
     </div>
-    <button class="btn lg block" id="start">Başlayalım 🚀</button>
+    <div>
+      <button class="btn lg block" id="start">Başlayalım 🚀</button>
+      <p class="small muted" style="margin-top:10px;text-align:center">📍 Gökyüzünü bulunduğun yere göre çizmek için konumunu soracağız. Konumun yalnızca bu telefonda kalır.</p>
+    </div>
   </section>`;
-  $('#start').onclick = () => { S.onboarded = true; save(); $('#topbar').hidden = false; $('#tabbar').hidden = false; nav('home'); route(); };
+  $('#start').onclick = () => { S.onboarded = true; save(); $('#topbar').hidden = false; $('#tabbar').hidden = false; nav('home'); route(); locate('ask'); };
 }
 
 /* ---------- home ---------- */
@@ -131,6 +157,7 @@ function renderHome(main) {
         <div class="label num">%${pct}</div>
       </div>
     </div>
+    ${S.city === 'auto' && !S.geo ? html`<div class="card" style="margin-top:14px"><div class="row"><span style="font-size:28px" aria-hidden="true">📍</span><span><b>Gökyüzünü bulunduğun yere göre göster</b><br><span class="muted small">Konum henüz alınmadı. Şimdilik saat diliminden tahmin edilen yer kullanılıyor: ${tzGuess().name}.</span></span></div><button class="btn block" id="geo-home" style="margin-top:12px">Konumumu kullan</button></div>` : ''}
     <div class="section-title"><h2>Bu gece gökyüzünde 🌙</h2><button class="chip" id="to-sky">Canlı harita</button></div>
     <div class="tonight">
       ${up.length ? up.map(c => { const l = lessonById(c.id); return html`<button class="sky-item" data-lesson="${l.id}"><span class="emoji" aria-hidden="true">${l.emoji}</span><span><span class="name">${l.name}</span><br><span class="dir">${l.latin} · ${dirWord(c.az)}, ${altWord(c.alt)}</span></span><span class="muted" aria-hidden="true">›</span></button>`; }).join('') : '<div class="empty card"><div class="ic">☁️</div>Şu anda öğrendiğimiz takımyıldızlardan hiçbiri gökyüzünde görünmüyor. Birkaç saat sonra yeniden bak.</div>'}
@@ -143,6 +170,7 @@ function renderHome(main) {
   </section>`;
   $('#continue').onclick = () => nav(next ? `lesson/${next.id}` : 'practice');
   $('#to-sky').onclick = () => nav('sky');
+  const gh = $('#geo-home'); if (gh) gh.onclick = () => locate('user', route);
   $('#to-practice').onclick = () => nav('quiz/name');
   main.querySelectorAll('[data-lesson]').forEach(b => b.onclick = () => nav(`lesson/${b.dataset.lesson}`));
 }
@@ -199,7 +227,7 @@ function renderLesson(id) {
         body.innerHTML = html`<div class="name-block"><div class="big">${L.name}</div><div class="pron">${L.latin}</div></div>
           <div class="kid">${L.intro.map(s => `<p>${s}</p>`).join('')}</div>
           <div class="star-list">${VOCAB.map(v => html`<div class="star-row"><span style="font-size:20px">${v.emoji}</span><span><b class="latin" style="font-size:1.15em">${v.word}</b><br><span class="sub">${v.desc}</span></span><button class="chip" data-say="${v.word}" aria-label="${v.word} kelimesini dinle">🔊</button></div>`).join('')}</div>
-          <div class="fact"><span class="ic">💡</span><span>${L.fact}</span></div>`;
+          <div class="fact"><span class="ic">💡</span><span>${fill(L.fact)}</span></div>`;
       } else body.innerHTML = quizMarkup(questions);
     } else if (step === 0) {
       body.innerHTML = sceneBox() + nameBlock() + html`<div class="kid">${L.intro.map(s => `<p>${s}</p>`).join('')}</div>${L.scene.full ? '<button class="chip" id="full" style="margin-top:10px">Bütün ayıyı gör 🐻</button>' : ''}`;
@@ -208,10 +236,10 @@ function renderLesson(id) {
         <h2 style="margin-top:16px">Nasıl bulurum? 🔭</h2>
         <div class="kid">${L.find.map(s => `<p>${s}</p>`).join('')}</div>
         ${L.when ? html`<dl class="when"><div><dt>📅 Mevsim</dt><dd>${L.when.season}</dd></div><div><dt>🧭 Yön</dt><dd>${L.when.dir}</dd></div><div><dt>⏰ En iyi zaman</dt><dd>${L.when.best}</dd></div></dl>` : ''}
-        ${!hasKnow && L.fact ? html`<div class="fact"><span class="ic">${L.kind === 'nav' ? '✋' : '💡'}</span><span>${L.fact}</span></div>` : ''}`;
+        ${!hasKnow && L.fact ? html`<div class="fact"><span class="ic">${L.kind === 'nav' ? '✋' : '💡'}</span><span>${fill(L.fact)}</span></div>` : ''}`;
     } else if (step === 2 && hasKnow) {
       body.innerHTML = sceneBox() + html`
-        <div class="fact"><span class="ic">💡</span><span>${L.fact}</span></div>
+        <div class="fact"><span class="ic">💡</span><span>${fill(L.fact)}</span></div>
         ${L.story ? html`<div class="fact gold"><span class="ic">📖</span><span>${L.story}</span></div>` : ''}
         ${L.stars.length ? html`<h2 style="margin-top:18px">Yıldızları ⭐</h2><div class="star-list">${L.stars.map(k => { const s = STARS[k]; return html`<button class="star-row" data-star="${k}" style="color:${s.color}"><span class="dot"></span><span style="color:var(--text)"><b class="latin" style="font-size:1.15em">${s.name}</b> <span class="sub">${s.latin}</span><br><span class="sub">${s.fact}</span></span><span aria-hidden="true">🔊</span></button>`; }).join('')}</div>` : ''}`;
     } else body.innerHTML = quizMarkup(questions);
@@ -326,7 +354,7 @@ function renderSky(main) {
   main.querySelectorAll('[data-facing]').forEach(b => b.onclick = () => { facing = +b.dataset.facing; main.querySelectorAll('[data-facing]').forEach(x => x.setAttribute('aria-pressed', x === b)); upd(); });
   $('#labels').onclick = (e) => { S.labels = !S.labels; save(); e.currentTarget.setAttribute('aria-pressed', S.labels); dome.set({ showLabels: S.labels }); };
   $('#loc').onclick = openSettings;
-  $('#geo').onclick = () => locate(route);
+  $('#geo').onclick = () => locate('user', route);
   canvas.onclick = (e) => {
     const r = canvas.getBoundingClientRect(); const id = dome.pick(e.clientX - r.left, e.clientY - r.top);
     dome.set({ highlight: id });
@@ -340,10 +368,28 @@ function renderSky(main) {
   window.addEventListener('resize', onResize);
   current.cleanup = () => { dome.stop(); clearInterval(playing); window.removeEventListener('resize', onResize); };
 }
-function locate(cb) {
-  if (!navigator.geolocation) return toast('Bu cihazda konum özelliği yok');
-  toast('Konum bulunuyor…');
-  navigator.geolocation.getCurrentPosition(p => { S.geo = { lat: +p.coords.latitude.toFixed(3), lon: +p.coords.longitude.toFixed(3) }; S.city = 'geo'; save(); toast('Konum kaydedildi ✅'); cb && cb(); }, () => toast('Konum izni verilmedi. Ayarlardan şehir seç.'), { timeout: 10000 });
+const GEO_ERR = {
+  1: 'Konum izni kapalı. Tarayıcı ayarlarından bu siteye konum izni ver ya da Ayarlar\'dan şehir seç.',
+  2: 'Konum bulunamadı. Telefonda konum (GPS) açık mı?',
+  3: 'Konum bulunamadı. Açık bir yerde yeniden dene.',
+};
+// mode: 'silent' = refresh only if permission is already granted; 'ask' = may show the browser prompt; 'user' = button press, report the result and call `after`
+function locate(mode, after) {
+  if (!navigator.geolocation) { if (mode !== 'silent') toast('Bu cihaz konum bulamıyor. Ayarlar\'dan şehir seç.', 5000); return; }
+  const run = () => {
+    if (mode !== 'silent') { S.geoAsked = true; save(); }
+    if (mode === 'user') toast('Konum bulunuyor…');
+    navigator.geolocation.getCurrentPosition((p) => {
+      const g = { lat: +p.coords.latitude.toFixed(3), lon: +p.coords.longitude.toFixed(3) };
+      const moved = S.city !== 'auto' || !S.geo || Math.abs(g.lat - S.geo.lat) + Math.abs(g.lon - S.geo.lon) > 0.1;
+      S.geo = g; S.city = 'auto'; save();
+      if (mode === 'user') { toast(`Konum bulundu ✅ ${coordText(g)}`, 3000); return after && after(); }
+      // redraw only views that show the sky, and never under an open lesson or sheet
+      if (moved && !$('#overlay').children.length && ['home', 'sky'].includes(location.hash.slice(1) || 'home')) route();
+    }, (e) => { if (mode !== 'silent') toast(GEO_ERR[e.code] || GEO_ERR[2], 6000); }, { timeout: 20000, maximumAge: 600000 });
+  };
+  if (mode !== 'silent') return run();
+  navigator.permissions?.query({ name: 'geolocation' }).then(r => { if (r.state === 'granted') run(); }).catch(() => { /* no Permissions API: keep the saved fix */ });
 }
 
 /* ---------- practice ---------- */
@@ -447,15 +493,17 @@ function openSettings() {
   ov.innerHTML = html`<div class="sheet-backdrop" id="bd"></div><div class="sheet" role="dialog" aria-label="Ayarlar"><div class="grab"></div>
     <h2>Ayarlar ⚙️</h2>
     <div class="setting"><label>Görünüm</label><div class="chips">${chips('theme', [['dark', '🌙 Gece'], ['light', '☀️ Gündüz'], ['auto', 'Otomatik']], S.theme)}</div></div>
-    <div class="setting"><label for="city">Şehir (gökyüzü haritası için)</label><select id="city">${CITIES.map(c => `<option value="${c.id}" ${S.city === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}${S.geo ? `<option value="geo" ${S.city === 'geo' ? 'selected' : ''}>Konumum</option>` : ''}</select><button class="chip" id="geo2">📡 Telefonun konumunu kullan</button></div>
+    <div class="setting"><label for="city">Konum (gökyüzü haritası için)</label><select id="city"><option value="auto" ${S.city === 'auto' ? 'selected' : ''}>📍 Telefonun konumu</option>${CITIES.map(c => `<option value="${c.id}" ${S.city === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}</select>
+      <p class="small muted" id="geo-status">${S.city !== 'auto' ? `${place().name}: ${coordText(place())}` : S.geo ? `Konumun: ${coordText(S.geo)}` : `Konum henüz alınmadı. Şimdilik ${tzGuess().name} kullanılıyor.`}</p>
+      <button class="chip" id="geo2">📡 Konumumu şimdi bul</button></div>
     <div class="setting"><label>İlerleme</label><div class="row"><span class="grow muted small">${Object.keys(S.done).length} ders tamamlandı</span><button class="chip" id="reset" style="color:var(--red)">Baştan başla</button></div></div>
     <div class="setting small muted">Yıldız konumları: HYG / d3-celestial. Her şey bu cihazda kalır; hiçbir veri gönderilmez.</div>
   </div>`;
   const close = () => { ov.innerHTML = ''; route(); };
   $('#bd').onclick = close;
   ov.querySelectorAll('[data-set]').forEach(b => b.onclick = () => { S[b.dataset.set] = b.dataset.v; save(); applyTheme(); ov.querySelectorAll(`[data-set=${b.dataset.set}]`).forEach(x => x.setAttribute('aria-pressed', x === b)); });
-  $('#city').onchange = (e) => { S.city = e.target.value; save(); };
-  $('#geo2').onclick = () => locate(openSettings);
+  $('#city').onchange = (e) => { S.city = e.target.value; S.cityPicked = S.city !== 'auto'; save(); if (S.city === 'auto') locate('user', openSettings); else openSettings(); };
+  $('#geo2').onclick = () => locate('user', openSettings);
   $('#reset').onclick = () => { if (confirm('Bütün ilerleme silinsin mi?')) { S.done = {}; S.cards = {}; S.best = {}; save(); close(); toast('Baştan başladın'); } };
 }
 
@@ -470,4 +518,5 @@ window.addEventListener('hashchange', route);
 if ('speechSynthesis' in window) speechSynthesis.getVoices();
 document.fonts && document.fonts.ready.then(() => { if (location.hash === '#sky') route(); }); // redraw dome labels with the loaded font
 route();
+if (S.onboarded && S.city === 'auto') locate(S.geo || S.geoAsked ? 'silent' : 'ask');
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => { /* offline support is optional */ });
