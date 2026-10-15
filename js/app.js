@@ -207,7 +207,7 @@ function renderLesson(id) {
       body.innerHTML = sceneBox() + html`
         <h2 style="margin-top:16px">Nasıl bulurum? 🔭</h2>
         <div class="kid">${L.find.map(s => `<p>${s}</p>`).join('')}</div>
-        ${L.when ? html`<div class="chips" style="margin-top:14px"><span class="chip" aria-pressed="true">📅 ${L.when.season}</span><span class="chip" aria-pressed="true">🧭 ${L.when.dir}</span><span class="chip">⏰ ${L.when.best}</span></div>` : ''}
+        ${L.when ? html`<dl class="when"><div><dt>📅 Mevsim</dt><dd>${L.when.season}</dd></div><div><dt>🧭 Yön</dt><dd>${L.when.dir}</dd></div><div><dt>⏰ En iyi zaman</dt><dd>${L.when.best}</dd></div></dl>` : ''}
         ${!hasKnow && L.fact ? html`<div class="fact"><span class="ic">${L.kind === 'nav' ? '✋' : '💡'}</span><span>${L.fact}</span></div>` : ''}`;
     } else if (step === 2 && hasKnow) {
       body.innerHTML = sceneBox() + html`
