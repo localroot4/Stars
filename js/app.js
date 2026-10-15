@@ -121,17 +121,17 @@ function renderOnboard() {
   $('#main').innerHTML = html`<section class="onboard view">
     <div>
       <div class="hero-name">Yıldızlar</div>
-      <h1 style="margin-top:10px">Gökyüzünü tanıyalım ✨</h1>
-      <p class="muted" style="margin-top:8px">Yıldızların adlarını, şekillerini, gökyüzündeki yerlerini ve kuzeyi bulmanın yolunu öğren.</p>
+      <h1>Gökyüzünü tanıyalım ✨</h1>
+      <p class="muted">Yıldızların adlarını, şekillerini, gökyüzündeki yerlerini ve kuzeyi bulmanın yolunu öğren.</p>
     </div>
-    <div class="stack">
-      <div class="card row"><span style="font-size:30px" aria-hidden="true">🐻</span><span><b>Bak</b><br><span class="muted small">Her takımyıldızın şekli gözünün önünde çizilir.</span></span></div>
-      <div class="card row"><span style="font-size:30px" aria-hidden="true">🧭</span><span><b>Bul</b><br><span class="muted small">Canlı gökyüzü haritası, bu gece nereye bakacağını gösterir.</span></span></div>
-      <div class="card row"><span style="font-size:30px" aria-hidden="true">🎯</span><span><b>Dene</b><br><span class="muted small">Kısa alıştırmalarla adlar aklında kalır.</span></span></div>
+    <div class="feature-list">
+      <div class="feature"><span aria-hidden="true">🐻</span><span><b>Bak</b><span class="sub">Her takımyıldızın şekli gözünün önünde çizilir.</span></span></div>
+      <div class="feature"><span aria-hidden="true">🧭</span><span><b>Bul</b><span class="sub">Canlı harita, bu gece nereye bakacağını gösterir.</span></span></div>
+      <div class="feature"><span aria-hidden="true">🎯</span><span><b>Dene</b><span class="sub">Kısa alıştırmalarla adlar aklında kalır.</span></span></div>
     </div>
     <div>
       <button class="btn lg block" id="start">Başlayalım 🚀</button>
-      <p class="small muted" style="margin-top:10px;text-align:center">📍 Gökyüzünü bulunduğun yere göre çizmek için konumunu soracağız. Konumun yalnızca bu telefonda kalır.</p>
+      <p class="small muted center" style="margin-top:10px">📍 Gökyüzünü bulunduğun yere göre çizmek için konumunu soracağız. Konumun yalnızca bu telefonda kalır.</p>
     </div>
   </section>`;
   $('#start').onclick = () => { S.onboarded = true; save(); $('#topbar').hidden = false; $('#tabbar').hidden = false; nav('home'); route(); locate('ask'); };
@@ -145,27 +145,26 @@ function renderHome(main) {
   const up = upNow().slice(0, 4);
   const hour = new Date().getHours();
   const greet = hour < 11 ? 'Günaydın' : hour < 18 ? 'İyi günler' : 'İyi akşamlar';
-  main.innerHTML = html`<section class="view">
+  const tile = (attrs, emoji, name, sub) => html`<button class="tile" ${attrs}><span class="tile-emoji" aria-hidden="true">${emoji}</span><span class="tile-name">${name}</span><span class="tile-sub">${sub}</span></button>`;
+  main.innerHTML = html`<section class="view home">
     <div class="card hero">
-      <div>
+      <div class="hero-text">
         <h1>${greet} 👋</h1>
-        <p class="muted" style="margin-top:4px">${done === 0 ? 'İlk yıldızını öğrenmeye hazır mısın?' : done === total ? 'Hepsini öğrendin! Şimdi dışarı çık, gökyüzüne bak 🌙' : `${total} dersin ${done} tanesini bitirdin.`}</p>
-        <button class="btn" style="margin-top:14px" id="continue">${next ? (done ? 'Devam et' : 'Başla') + ' ' + next.emoji : 'Alıştırma yap 🎯'}</button>
+        <p class="muted">${done === 0 ? 'İlk yıldızını öğrenmeye hazır mısın?' : done === total ? 'Hepsini öğrendin! Şimdi dışarı çık, gökyüzüne bak 🌙' : `${total} dersin ${done} tanesini bitirdin.`}</p>
+        <button class="btn" id="continue">${next ? (done ? 'Devam et' : 'Başla') + ' ' + next.emoji : 'Alıştırma yap 🎯'}</button>
       </div>
       <div class="ring" role="img" aria-label="İlerleme yüzde ${pct}">
         <svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="42"/><circle class="bar" cx="50" cy="50" r="42" stroke-dasharray="264" stroke-dashoffset="${264 - 264 * pct / 100}"/></svg>
         <div class="label num">%${pct}</div>
       </div>
     </div>
-    ${S.city === 'auto' && !S.geo ? html`<div class="card" style="margin-top:14px"><div class="row"><span style="font-size:28px" aria-hidden="true">📍</span><span><b>Gökyüzünü bulunduğun yere göre göster</b><br><span class="muted small">Konum henüz alınmadı. Şimdilik saat diliminden tahmin edilen yer kullanılıyor: ${tzGuess().name}.</span></span></div><button class="btn block" id="geo-home" style="margin-top:12px">Konumumu kullan</button></div>` : ''}
+    ${S.city === 'auto' && !S.geo ? html`<div class="card notice"><span aria-hidden="true">📍</span><span class="grow"><b>Konumun henüz alınmadı</b><span class="sub">Şimdilik tahmini yer: ${tzGuess().name}</span></span><button class="btn sm" id="geo-home">Konumu kullan</button></div>` : ''}
     <div class="section-title"><h2>Bu gece gökyüzünde 🌙</h2><button class="chip" id="to-sky">Canlı harita</button></div>
-    <div class="tonight">
-      ${up.length ? up.map(c => { const l = lessonById(c.id); return html`<button class="sky-item" data-lesson="${l.id}"><span class="emoji" aria-hidden="true">${l.emoji}</span><span><span class="name">${l.name}</span><br><span class="dir">${l.latin} · ${dirWord(c.az)}, ${altWord(c.alt)}</span></span><span class="muted" aria-hidden="true">›</span></button>`; }).join('') : '<div class="empty card"><div class="ic">☁️</div>Şu anda öğrendiğimiz takımyıldızlardan hiçbiri gökyüzünde görünmüyor. Birkaç saat sonra yeniden bak.</div>'}
-    </div>
-    <div class="section-title"><h2>Kısayollar</h2></div>
-    <div class="stack">
-      <button class="sky-item" data-lesson="nav-polaris"><span class="emoji" aria-hidden="true">🧭</span><span><span class="name">Kuzeyi bul</span><br><span class="dir">Büyük Kepçe ve Kutup Yıldızı ile</span></span><span class="muted" aria-hidden="true">›</span></button>
-      <button class="sky-item" id="to-practice"><span class="emoji" aria-hidden="true">🎯</span><span><span class="name">Hızlı alıştırma</span><br><span class="dir">On soru, takımyıldız adları</span></span><span class="muted" aria-hidden="true">›</span></button>
+    ${up.length ? html`<div class="tiles">${up.map(c => { const l = lessonById(c.id); return tile(`data-lesson="${l.id}"`, l.emoji, l.name, `${dirWord(c.az)} · ${altWord(c.alt)}`); }).join('')}</div>`
+      : '<div class="empty card"><div class="ic">☁️</div>Şu anda öğrendiğimiz takımyıldızlardan hiçbiri gökyüzünde görünmüyor. Birkaç saat sonra yeniden bak.</div>'}
+    <div class="tiles shortcuts">
+      ${tile('data-lesson="nav-polaris"', '🧭', 'Kuzeyi bul', 'Kutup Yıldızı ile')}
+      ${tile('id="to-practice"', '🎯', 'Hızlı alıştırma', 'On soru')}
     </div>
   </section>`;
   $('#continue').onclick = () => nav(next ? `lesson/${next.id}` : 'practice');
@@ -176,19 +175,26 @@ function renderHome(main) {
 }
 
 /* ---------- learn ---------- */
+let learnGroup = null; // the season tab stays selected while the app is open
 function renderLearn(main) {
-  main.innerHTML = html`<section class="view">
-    <h1>Öğren 📚</h1>
-    <p class="muted">Her ders üç dakika: bak, bul, dene.</p>
-    <div class="path">
-      ${Object.keys(GROUPS).map(g => html`<div class="group-title"><span>${GROUPS[g].emoji} ${GROUPS[g].name}</span></div>
-        ${LESSONS.filter(l => l.group === g).map(l => html`<button class="lesson ${S.done[l.id] ? 'done' : ''}" data-lesson="${l.id}">
-          <span class="emoji" aria-hidden="true">${l.emoji}</span>
-          <span class="t"><span class="name">${l.name}</span><span class="sub">${l.latin}${l.nick ? ' · ' + l.nick : ''}</span></span>
-          <span class="star" aria-hidden="true">⭐</span></button>`).join('')}`).join('')}
-    </div>
+  const groups = Object.keys(GROUPS);
+  const done = LESSONS.filter(l => S.done[l.id]).length;
+  if (!learnGroup) learnGroup = (LESSONS.find(l => !S.done[l.id]) || LESSONS[0]).group;
+  main.innerHTML = html`<section class="view learn">
+    <div class="row between"><h1>Öğren 📚</h1><span class="pill num" aria-label="${LESSONS.length} dersten ${done} tanesi bitti">⭐ ${done}/${LESSONS.length}</span></div>
+    <div class="seg" role="tablist" aria-label="Mevsimler">${groups.map(g => html`<button role="tab" data-group="${g}" aria-selected="${g === learnGroup}"><span aria-hidden="true">${GROUPS[g].emoji}</span>${GROUPS[g].short}</button>`).join('')}</div>
+    <div class="tiles lessons" role="tabpanel" id="lesson-tiles"></div>
   </section>`;
-  main.querySelectorAll('[data-lesson]').forEach(b => b.onclick = () => nav(`lesson/${b.dataset.lesson}`));
+  const paint = () => {
+    const box = $('#lesson-tiles');
+    box.innerHTML = LESSONS.filter(l => l.group === learnGroup).map(l => html`<button class="tile lesson-tile ${S.done[l.id] ? 'done' : ''}" data-lesson="${l.id}">
+      <span class="tile-emoji" aria-hidden="true">${l.emoji}</span><span class="tile-name">${l.name}</span><span class="tile-sub">${l.latin}</span>
+      ${S.done[l.id] ? '<span class="badge" aria-label="bitti">⭐</span>' : ''}</button>`).join('');
+    box.querySelectorAll('[data-lesson]').forEach(b => b.onclick = () => nav(`lesson/${b.dataset.lesson}`));
+    box.classList.remove('swap'); void box.offsetWidth; box.classList.add('swap');
+  };
+  main.querySelectorAll('[data-group]').forEach(b => b.onclick = () => { learnGroup = b.dataset.group; main.querySelectorAll('[data-group]').forEach(x => x.setAttribute('aria-selected', x === b)); paint(); });
+  paint();
 }
 
 /* ---------- lesson player ---------- */
@@ -201,48 +207,49 @@ function renderLesson(id) {
   const questions = buildLessonQuiz(L);
   const draw = () => {
     fig && fig.stop(); dome && dome.stop(); fig = dome = null;
+    const isQuiz = step === steps.length - 1;
     ov.innerHTML = html`<div class="player" role="dialog" aria-label="${L.name}">
       <div class="phead">
         <button class="icon-btn" id="close" aria-label="Kapat">${ICON_X}</button>
         <div class="steps" aria-label="Adım ${step + 1} / ${steps.length}">${steps.map((s, i) => `<i class="${i <= step ? 'on' : ''}"><b></b></i>`).join('')}</div>
         <span class="small muted">${steps[step]}</span>
       </div>
-      <div class="pbody ${L.kind !== 'vocab' && step < steps.length - 1 ? 'two' : ''}" id="pbody"></div>
-      <div class="pfoot">
-        ${step > 0 ? '<button class="btn ghost" id="prev">Geri</button>' : ''}
-        <button class="btn block" id="next">İleri</button>
-      </div>
+      <div class="pbody ${L.kind !== 'vocab' && !isQuiz ? 'two' : ''}" id="pbody"></div>
+      ${isQuiz ? '' : html`<div class="pfoot">${step > 0 ? '<button class="btn ghost" id="prev">Geri</button>' : ''}<button class="btn block" id="next">İleri</button></div>`}
     </div>`;
     const body = $('#pbody');
     const sceneBox = () => L.scene.dome
-      ? '<div class="sky-wrap"><canvas id="dome" role="img" aria-label="Yaz gökyüzü"></canvas></div>'
-      : html`<div class="figure-wrap"><canvas id="fig" aria-label="${L.name} şekli" role="img"></canvas>${L.kind !== 'nav' ? `<span class="mascot bob" aria-hidden="true">${L.emoji}</span>` : ''}</div>`;
-    const nameBlock = () => html`<div class="name-block">
-      <div class="big">${L.name}</div>
-      <div class="pron">${L.latin}${L.nick ? ` · ${L.nick}` : ''}</div>
-      <button class="chip speak" id="speak" aria-label="Adı dinle">🔊 Dinle</button>
-    </div>`;
-    if (L.kind === 'vocab') {
-      if (step === 0) {
-        body.innerHTML = html`<div class="name-block"><div class="big">${L.name}</div><div class="pron">${L.latin}</div></div>
-          <div class="kid">${L.intro.map(s => `<p>${s}</p>`).join('')}</div>
-          <div class="star-list">${VOCAB.map(v => html`<div class="star-row"><span style="font-size:20px">${v.emoji}</span><span><b class="latin" style="font-size:1.15em">${v.word}</b><br><span class="sub">${v.desc}</span></span><button class="chip" data-say="${v.word}" aria-label="${v.word} kelimesini dinle">🔊</button></div>`).join('')}</div>
-          <div class="fact"><span class="ic">💡</span><span>${fill(L.fact)}</span></div>`;
-      } else body.innerHTML = quizMarkup(questions);
+      ? '<div class="dome-box"><div class="sky-wrap"><canvas id="dome" role="img" aria-label="Yaz gökyüzü"></canvas></div></div>'
+      : html`<div class="figure-wrap"><canvas id="fig" aria-label="${L.name} şekli" role="img"></canvas>${L.kind !== 'nav' ? `<span class="mascot bob" aria-hidden="true">${L.emoji}</span>` : ''}${step === 0 && L.scene.full ? `<button class="chip on-figure" id="full">${fullOn ? 'Kepçeyi gör' : 'Bütün ayıyı gör'} 🐻</button>` : ''}</div>`;
+    const nameBlock = () => html`<div class="name-block"><div><div class="big">${L.name}</div><div class="pron">${L.latin}${L.nick ? ` · ${L.nick}` : ''}</div></div><button class="icon-btn speak" id="speak" aria-label="Adı dinle">🔊</button></div>`;
+    const info = (ic, text) => html`<div class="fact" id="info" aria-live="polite"><span class="ic">${ic}</span><span>${text}</span></div>`;
+    if (isQuiz) body.innerHTML = quizMarkup(questions);
+    else if (L.kind === 'vocab') {
+      body.innerHTML = html`<div class="name-block"><div><div class="big">${L.name}</div><div class="pron">${L.intro.join(' ')}</div></div></div>
+        <div class="word-grid">${VOCAB.map((v, i) => html`<button class="word" data-word="${i}"><span aria-hidden="true">${v.emoji}</span><span class="latin">${v.word}</span></button>`).join('')}</div>
+        ${info('💡', `${fill(L.fact)} Bir kelimeye dokun; anlamını gör, sesini dinle.`)}`;
+      body.querySelectorAll('[data-word]').forEach(b => b.onclick = () => {
+        const v = VOCAB[+b.dataset.word];
+        body.querySelectorAll('[data-word]').forEach(x => x.setAttribute('aria-pressed', x === b));
+        $('#info', body).innerHTML = html`<span class="ic">${v.emoji}</span><span><b class="latin">${v.word}</b>: ${v.desc}</span>`;
+        speak(v.word);
+      });
     } else if (step === 0) {
-      body.innerHTML = sceneBox() + nameBlock() + html`<div class="kid">${L.intro.map(s => `<p>${s}</p>`).join('')}</div>${L.scene.full ? '<button class="chip" id="full" style="margin-top:10px">Bütün ayıyı gör 🐻</button>' : ''}`;
+      body.innerHTML = sceneBox() + nameBlock() + html`<div class="kid">${L.intro.map(s => `<p>${s}</p>`).join('')}</div>`;
     } else if (step === 1) {
-      body.innerHTML = sceneBox() + html`
-        <h2 style="margin-top:16px">Nasıl bulurum? 🔭</h2>
-        <div class="kid">${L.find.map(s => `<p>${s}</p>`).join('')}</div>
-        ${L.when ? html`<dl class="when"><div><dt>📅 Mevsim</dt><dd>${L.when.season}</dd></div><div><dt>🧭 Yön</dt><dd>${L.when.dir}</dd></div><div><dt>⏰ En iyi zaman</dt><dd>${L.when.best}</dd></div></dl>` : ''}
-        ${!hasKnow && L.fact ? html`<div class="fact"><span class="ic">${L.kind === 'nav' ? '✋' : '💡'}</span><span>${fill(L.fact)}</span></div>` : ''}`;
-    } else if (step === 2 && hasKnow) {
-      body.innerHTML = sceneBox() + html`
-        <div class="fact"><span class="ic">💡</span><span>${fill(L.fact)}</span></div>
-        ${L.story ? html`<div class="fact gold"><span class="ic">📖</span><span>${L.story}</span></div>` : ''}
-        ${L.stars.length ? html`<h2 style="margin-top:18px">Yıldızları ⭐</h2><div class="star-list">${L.stars.map(k => { const s = STARS[k]; return html`<button class="star-row" data-star="${k}" style="color:${s.color}"><span class="dot"></span><span style="color:var(--text)"><b class="latin" style="font-size:1.15em">${s.name}</b> <span class="sub">${s.latin}</span><br><span class="sub">${s.fact}</span></span><span aria-hidden="true">🔊</span></button>`; }).join('')}</div>` : ''}`;
-    } else body.innerHTML = quizMarkup(questions);
+      body.innerHTML = sceneBox() + html`<div class="kid steps-list">${L.find.map(s => `<p>${s}</p>`).join('')}</div>
+        ${L.when ? html`<dl class="when"><div><dt>📅 Mevsim</dt><dd>${L.when.season}</dd></div><div><dt>🧭 Yön</dt><dd>${L.when.dir}</dd></div><div><dt>⏰ En iyi</dt><dd>${L.when.best}</dd></div></dl>` : ''}
+        ${!hasKnow && L.fact ? info(L.kind === 'nav' ? '✋' : '💡', fill(L.fact)) : ''}`;
+    } else {
+      body.innerHTML = sceneBox() + info('💡', fill(L.fact)) + (L.story ? html`<div class="fact gold"><span class="ic">📖</span><span>${L.story}</span></div>` : '')
+        + (L.stars.length ? html`<div class="star-chips" aria-label="Yıldızları">${L.stars.map(k => html`<button class="star-chip" data-star="${k}" style="--c:${STARS[k].color}"><span class="dot"></span><span class="latin">${STARS[k].name}</span></button>`).join('')}</div>` : '');
+    }
+    const showStar = (k) => {
+      const s = STARS[k], box = $('#info', body); if (!box) return;
+      body.querySelectorAll('[data-star]').forEach(x => x.setAttribute('aria-pressed', x.dataset.star === k));
+      box.innerHTML = html`<span class="ic">⭐</span><span><b class="latin">${s.name}</b> <span class="sub">${s.latin}</span><br>${s.fact}</span>`;
+      speak(s.name);
+    };
     // canvases
     const c = $('#fig', body);
     if (c) {
@@ -250,7 +257,11 @@ function renderLesson(id) {
       const labels = step === 2 ? { ...labelsFor(scene), ...Object.fromEntries(L.stars.map(k => [STARS[k].hip, STARS[k].name])) } : labelsFor(scene);
       fig = makeFigure(c, scene, { labels });
       fig.animate(step === 0 ? 2200 : 1600);
-      c.onclick = (e) => { const r = c.getBoundingClientRect(); const hip = fig.pick(e.clientX - r.left, e.clientY - r.top); const k = hip && Object.keys(STARS).find(k => STARS[k].hip === hip); if (k) { toast(`${STARS[k].name} · ${STARS[k].latin}`); speak(STARS[k].name); } };
+      c.onclick = (e) => {
+        const r = c.getBoundingClientRect(); const hip = fig.pick(e.clientX - r.left, e.clientY - r.top);
+        const k = hip && Object.keys(STARS).find(k => STARS[k].hip === hip); if (!k) return;
+        if ($('#info', body)) showStar(k); else { toast(`${STARS[k].name} · ${STARS[k].latin}`); speak(STARS[k].name); }
+      };
     }
     const d = $('#dome', body);
     if (d) {
@@ -258,15 +269,13 @@ function renderLesson(id) {
       dome = new SkyDome(d, { lat, lon, date: new Date(new Date().getFullYear(), m.month - 1, m.day, m.hour), facing: m.facing, cons: skyCons(), showLabels: true });
       dome.start();
     }
-    body.querySelectorAll('[data-say]').forEach(b => b.onclick = () => speak(b.dataset.say));
-    body.querySelectorAll('[data-star]').forEach(b => b.onclick = () => speak(STARS[b.dataset.star].name));
+    body.querySelectorAll('[data-star]').forEach(b => b.onclick = () => showStar(b.dataset.star));
     const sp = $('#speak', body); if (sp) sp.onclick = () => speak(L.name);
     const fb = $('#full', body); if (fb) fb.onclick = () => { fullOn = !fullOn; draw(); };
-    bindQuiz(body, questions, finish);
+    if (isQuiz) bindQuiz(body, questions, finish);
     $('#close').onclick = close;
     const pv = $('#prev'); if (pv) pv.onclick = () => { step--; draw(); };
-    $('#next').onclick = () => { step++; draw(); };
-    if (step === steps.length - 1) $('#next').hidden = true; // the quiz itself ends the lesson
+    const nx = $('#next'); if (nx) nx.onclick = () => { step++; draw(); };
   };
   const finish = () => { S.done[L.id] = true; save(); close(); confetti($('#confetti')); toast(L.acc ? `Aferin! ${L.acc} öğrendin ⭐` : 'Aferin! Dersi bitirdin ⭐'); };
   const close = () => { fig && fig.stop(); dome && dome.stop(); ov.innerHTML = ''; nav('learn'); };
@@ -281,7 +290,7 @@ const optName = (l) => html`<span class="latin">${l.name}</span><br><small class
 function buildLessonQuiz(L) {
   const qs = [];
   if (L.kind === 'vocab') {
-    for (const v of shuffle(VOCAB).slice(0, 3)) qs.push({ q: `Hangisi <span class="latin">${v.word}</span> demek?`, options: shuffle([v, ...shuffle(VOCAB.filter(x => x !== v)).slice(0, 3)]).map(x => ({ label: x.desc, ok: x === v })), say: v.word });
+    for (const v of shuffle(VOCAB).slice(0, 3)) qs.push({ q: `${v.emoji} ${v.desc}<br><small class="muted">Bu hangi kelime?</small>`, options: shuffle([v, ...shuffle(VOCAB.filter(x => x !== v)).slice(0, 3)]).map(x => ({ label: `<span class="latin">${x.word}</span>`, ok: x === v })), say: v.word });
     return qs;
   }
   if (L.kind === 'nav') {
@@ -307,8 +316,9 @@ function bindQuiz(root, questions, onDone) {
   const show = () => {
     const q = questions[i];
     $('#qn', root).textContent = `Soru ${i + 1} / ${questions.length}`;
-    box.innerHTML = html`<div class="quiz-q">${q.q}</div>${q.figure ? '<div class="figure-wrap" style="max-height:38dvh;margin-bottom:12px"><canvas id="qfig" role="img" aria-label="Şekil"></canvas></div>' : ''}
-      <div class="options ${q.figOptions ? 'figs' : ''}">${q.options.map((o, k) => `<button class="opt" data-k="${k}"${q.figOptions ? ` aria-label="${k + 1}. şekil"` : ''}>${q.figOptions ? '<canvas></canvas>' : o.label}</button>`).join('')}</div>`;
+    const wide = !q.figOptions && q.options.some(o => o.label.replace(/<[^>]+>/g, '').length > 26);
+    box.innerHTML = html`<div class="quiz-q">${q.q}</div>${q.figure ? '<div class="figure-wrap"><canvas id="qfig" role="img" aria-label="Şekil"></canvas></div>' : q.figOptions ? '' : '<div class="grow"></div>'}
+      <div class="options ${q.figOptions ? 'figs' : ''} ${wide ? 'wide' : ''}">${q.options.map((o, k) => `<button class="opt" data-k="${k}"${q.figOptions ? ` aria-label="${k + 1}. şekil"` : ''}>${q.figOptions ? '<canvas></canvas>' : o.label}</button>`).join('')}</div>`;
     if (q.figure) { const f = makeFigure($('#qfig', box), q.figure, { labels: {} }); f.animate(900); }
     if (q.figOptions) box.querySelectorAll('.opt canvas').forEach((c, k) => { new Figure(c, { figures: q.options[k].scene.figures, extra: q.options[k].scene.extra || [], labels: {}, pad: .14, bgStars: false }).draw(1); });
     box.querySelectorAll('.opt').forEach(b => b.onclick = () => {
@@ -326,20 +336,15 @@ function bindQuiz(root, questions, onDone) {
 function renderSky(main) {
   let offset = 0, playing = 0, facing = 180;
   const { lat, lon } = place();
-  main.innerHTML = html`<section class="view">
-    <div class="row between" style="margin-bottom:10px"><h1>Şu anda gökyüzü 🌙</h1><button class="chip" id="loc">📍 ${placeName()}</button></div>
-    <div class="sky-wrap"><canvas id="dome" role="img" aria-label="Canlı gökyüzü haritası"></canvas><div id="bubble" hidden></div></div>
-    <div class="sky-controls">
-      <p class="small muted">Telefonu başının üstünde tut. Haritanın altı, baktığın yöndür. Bir şekle dokun, adını gör.</p>
-      <div>
-        <div class="small muted" style="margin-bottom:6px">Hangi yöne bakıyorsun?</div>
-        <div class="facing" role="group" aria-label="Baktığın yön">${[['Kuzey', 0], ['Doğu', 90], ['Güney', 180], ['Batı', 270]].map(([t, v]) => `<button class="chip" data-facing="${v}" aria-pressed="${v === 180}">${t}</button>`).join('')}</div>
-      </div>
-      <div>
-        <div class="time-row"><button class="icon-btn" id="play" aria-label="Zamanı ilerlet"><svg viewBox="0 0 24 24"><path d="M7 4l12 8-12 8z"/></svg></button><input type="range" id="time" min="0" max="720" step="15" value="0" aria-label="Saat"><button class="chip" id="now">Şimdi</button></div>
-        <div class="small muted num" id="tlabel" style="text-align:center"></div>
-      </div>
-      <div class="chips"><button class="chip" id="labels" aria-pressed="${S.labels}">🏷️ Adlar</button><button class="chip" id="geo">📡 Konumum</button></div>
+  main.innerHTML = html`<section class="view sky">
+    <div class="row between"><h1>Gökyüzü 🌙</h1><button class="chip" id="loc">📍 ${placeName()}</button></div>
+    <div class="dome-box"><div class="sky-wrap"><canvas id="dome" role="img" aria-label="Canlı gökyüzü haritası"></canvas><div id="bubble" hidden></div>${S.skyHint ? '' : '<div class="dome-hint" id="hint">Telefonu başının üstünde tut.<br>Haritanın altı, baktığın yön.</div>'}</div></div>
+    <div class="facing" role="group" aria-label="Baktığın yön">${[['Kuzey', 0], ['Doğu', 90], ['Güney', 180], ['Batı', 270]].map(([t, v]) => `<button class="chip" data-facing="${v}" aria-pressed="${v === 180}">${t}</button>`).join('')}</div>
+    <div class="time-row">
+      <button class="icon-btn" id="play" aria-label="Zamanı ilerlet"><svg viewBox="0 0 24 24"><path d="M7 4l12 8-12 8z"/></svg></button>
+      <div class="time-col"><input type="range" id="time" min="0" max="720" step="15" value="0" aria-label="Saat"><span class="small muted num" id="tlabel"></span></div>
+      <button class="chip" id="now">Şimdi</button>
+      <button class="icon-btn" id="labels" aria-pressed="${S.labels}" aria-label="Adları göster">🏷️</button>
     </div>
   </section>`;
   const canvas = $('#dome'), bubble = $('#bubble');
@@ -347,20 +352,23 @@ function renderSky(main) {
   const tlabel = () => { $('#tlabel').textContent = `${offset === 0 ? 'Şimdi' : `${Math.floor(offset / 60) ? `${Math.floor(offset / 60)} saat ` : ''}${offset % 60 ? `${offset % 60} dakika ` : ''}sonra`} · saat ${date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`; };
   const dome = new SkyDome(canvas, { lat, lon, date: date(), facing, cons: skyCons(), showLabels: S.labels });
   dome.start(); tlabel();
+  // first visit: an in-map hint that never covers other screens
+  if (!S.skyHint) { S.skyHint = true; save(); setTimeout(() => $('#hint')?.remove(), 8000); }
   const upd = () => { dome.set({ date: date(), facing }); tlabel(); };
   $('#time').oninput = (e) => { offset = +e.target.value; upd(); };
   $('#now').onclick = () => { offset = 0; $('#time').value = 0; upd(); };
   $('#play').onclick = () => { if (playing) { clearInterval(playing); playing = 0; return; } playing = setInterval(() => { offset += 10; if (offset > 720) offset = 0; $('#time').value = offset; upd(); }, 60); };
   main.querySelectorAll('[data-facing]').forEach(b => b.onclick = () => { facing = +b.dataset.facing; main.querySelectorAll('[data-facing]').forEach(x => x.setAttribute('aria-pressed', x === b)); upd(); });
   $('#labels').onclick = (e) => { S.labels = !S.labels; save(); e.currentTarget.setAttribute('aria-pressed', S.labels); dome.set({ showLabels: S.labels }); };
-  $('#loc').onclick = openSettings;
-  $('#geo').onclick = () => locate('user', route);
+  // without a GPS fix, the location chip asks for it directly
+  $('#loc').onclick = () => S.city === 'auto' && !S.geo ? locate('user', route) : openSettings();
   canvas.onclick = (e) => {
+    $('#hint')?.remove();
     const r = canvas.getBoundingClientRect(); const id = dome.pick(e.clientX - r.left, e.clientY - r.top);
     dome.set({ highlight: id });
     if (!id) { bubble.hidden = true; return; }
     const l = lessonById(id);
-    bubble.hidden = false; bubble.className = 'bubble'; bubble.innerHTML = html`${l.emoji} <span class="latin">${l.name}</span> · ${l.latin}`;
+    bubble.hidden = false; bubble.className = 'bubble'; bubble.innerHTML = html`${l.emoji} <span class="latin">${l.name}</span> · ${l.latin} ›`;
     bubble.onclick = () => nav(`lesson/${id}`);
     speak(l.name);
   };
@@ -401,10 +409,10 @@ function renderPractice(main) {
     { id: 'cards', ic: '🃏', t: 'Kartlar', d: 'Acele yok: her kartta bir takımyıldız' },
   ];
   const p = pool();
-  main.innerHTML = html`<section class="view">
+  main.innerHTML = html`<section class="view practice">
     <h1>Alıştırma 🎯</h1>
     <p class="muted">${p.length === conLessons().length ? 'Bütün takımyıldızlarla alıştırma.' : `Öğrendiğin ${p.length} takımyıldızla alıştırma.`}</p>
-    <div class="modes" style="margin-top:14px">${modes.map(m => html`<button class="mode" data-mode="${m.id}"><span class="ic" aria-hidden="true">${m.ic}</span><span class="t"><b>${m.t}</b><span>${m.d}</span></span><span class="small muted num">${S.best[m.id] != null ? `En iyi: ${S.best[m.id]}` : ''}</span></button>`).join('')}</div>
+    <div class="tiles modes">${modes.map(m => html`<button class="tile mode-tile" data-mode="${m.id}"><span class="tile-emoji" aria-hidden="true">${m.ic}</span><span class="tile-name">${m.t}</span><span class="tile-sub">${m.d}</span>${S.best[m.id] != null ? `<span class="badge num">🏆 ${S.best[m.id]}</span>` : ''}</button>`).join('')}</div>
   </section>`;
   main.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => nav(`quiz/${b.dataset.mode}`));
 }
@@ -443,7 +451,7 @@ function renderQuiz(mode) {
       const { lat, lon } = place(); const d = eveningFor(t.id);
       const up = SKY_CONS.filter(id => conAltAz(id, lat, lon, d).alt > 12);
       const cons = shuffle(up.filter(id => id !== t.id)).slice(0, 5).concat(t.id).map(id => ({ id, lines: LINES[id], label: '' }));
-      body.innerHTML = html`<div class="quiz-q">${t.emoji} ${t.acc} gökyüzünde bul ve ona dokun</div><div class="sky-wrap"><canvas id="qdome" role="img" aria-label="Gökyüzü haritası"></canvas></div><p class="small muted" style="margin-top:8px;text-align:center">${d.toLocaleDateString('tr-TR', { month: 'long' })} · saat 21.30 · ${placeName()}</p>`;
+      body.innerHTML = html`<div class="quiz-q">${t.emoji} ${t.acc} gökyüzünde bul ve ona dokun</div><div class="dome-box"><div class="sky-wrap"><canvas id="qdome" role="img" aria-label="Gökyüzü haritası"></canvas></div></div><p class="small muted center">${d.toLocaleDateString('tr-TR', { month: 'long' })} · saat 21.30 · ${placeName()}</p>`;
       const c = $('#qdome', body);
       dome = new SkyDome(c, { lat, lon, date: d, facing: 180, cons, showLabels: false }); dome.start();
       c.onclick = (e) => {

@@ -75,11 +75,11 @@ const ORION = [[27989, 25336, 25930, 26311, 26727, 27989], [25930, 24436, 27366,
 const PLEIADES = [17702, 17847, 17499, 17573, 17608, 17531];
 
 export const GROUPS = {
-  start: { name: 'Başlangıç: Hep Gökyüzünde', emoji: '🧭' },
-  winter: { name: 'Kış', emoji: '❄️' },
-  spring: { name: 'İlkbahar', emoji: '🌸' },
-  summer: { name: 'Yaz', emoji: '☀️' },
-  autumn: { name: 'Sonbahar', emoji: '🍂' },
+  start: { name: 'Başlangıç: Hep Gökyüzünde', short: 'İlk adım', emoji: '🧭' },
+  winter: { name: 'Kış', short: 'Kış', emoji: '❄️' },
+  spring: { name: 'İlkbahar', short: 'İlkbahar', emoji: '🌸' },
+  summer: { name: 'Yaz', short: 'Yaz', emoji: '☀️' },
+  autumn: { name: 'Sonbahar', short: 'Sonbahar', emoji: '🍂' },
 };
 
 // Each lesson: id, kind (con | asterism | nav | vocab), group, emoji, name, acc (name in the accusative, for sentences),
